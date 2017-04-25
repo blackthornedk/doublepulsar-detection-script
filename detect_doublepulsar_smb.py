@@ -5,7 +5,7 @@ import socket
 import argparse
 import struct
 import threading
-
+import netaddr
 
 # Packets
 negotiate_protocol_request = binascii.unhexlify("00000085ff534d4272000000001853c00000000000000000000000000000fffe00004000006200025043204e4554574f524b2050524f4752414d20312e3000024c414e4d414e312e30000257696e646f777320666f7220576f726b67726f75707320332e316100024c4d312e325830303200024c414e4d414e322e3100024e54204c4d20302e313200")
@@ -128,7 +128,16 @@ def threaded_check(ip_address):
 
 
 if ip:
-    check_ip(ip)
+    ip_range = netaddr.IPNetwork(ip)
+    if len(ip_range) == 1:
+        check_ip(ip)
+    else:
+        for ip_addr in ip_range:
+            semaphore.acquire()
+            ip_address = str(ip_addr)
+            t = threading.Thread(target=threaded_check, args=(ip_address,))
+            t.start()
+
 if filename:
     with open(filename, "r") as fp:
         for line in fp:

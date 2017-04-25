@@ -5,7 +5,7 @@ import socket
 import argparse
 import threading
 import ssl
-
+import netaddr
 
 # Packets
 ssl_negotiation_request = binascii.unhexlify("030000130ee000000000000100080001000000")
@@ -135,7 +135,16 @@ def threaded_check(ip_address):
 
 
 if ip:
-    check_ip(ip)
+    ip_range = netaddr.IPNetwork(ip)
+    if len(ip_range) == 1:
+        check_ip(ip)
+    else:
+        for ip_addr in ip_range:
+            semaphore.acquire()
+            ip_address = str(ip_addr)
+            t = threading.Thread(target=threaded_check, args=(ip_address,))
+            t.start()
+
 if filename:
     with open(filename, "r") as fp:
         for line in fp:
